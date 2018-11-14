@@ -40,6 +40,17 @@ public:
 
   enum class Button : uint8_t
   {
+	NativeInstruments,
+	Star,
+	Search,
+	PlugIn,
+	Pitch,
+	Mod,
+	Notes,
+	Follow,
+	FixedVel,
+	Chords,
+	Events,
     Control,
     Step,
     Browse,

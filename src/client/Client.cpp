@@ -110,7 +110,7 @@ void Client::onRender()
 
 void Client::buttonChanged(Device::Button button_, bool buttonState_, bool shiftPressed_)
 {
-  M_LOG("[Client] encoderChanged " << static_cast<int>(button_) << " ("
+  M_LOG("[Client] buttonChanged " << static_cast<int>(button_) << " ("
                                    << (buttonState_ ? "clicked " : "released")
                                    << ") "
                                    << (shiftPressed_ ? " SHIFT" : ""));
