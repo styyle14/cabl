@@ -43,6 +43,7 @@ class MaschineMikroMK3 : public Device
 
 	private:
 		enum class Button : uint8_t;
+		Device::Button deviceButton(Button btn_) const noexcept;
 		
 		void init() override;
 		bool read();
@@ -55,17 +56,23 @@ class MaschineMikroMK3 : public Device
 		std::array<uint8_t, kMikroMK3_ledsDataSize> m_leds;
 		bool m_isDirtyLeds;
 		
+		static constexpr uint8_t kMikroMK3_messageTypeDataSize = 1;
 		static constexpr uint8_t kMikroMK3_nButtons = 41;
 		static constexpr uint8_t kMikroMK3_buttonsDataSize = 6;
 		std::array<uint8_t, kMikroMK3_buttonsDataSize> m_buttons;
 		std::bitset<kMikroMK3_nButtons> m_buttonStates;
+		static constexpr uint8_t kMikroMK3_nEncoders = 1;
+		static constexpr uint8_t kMikroMK3_EncodersDataSize = 1;
+		static constexpr uint8_t kMikroMK3_nSmartstrips = 1;
+		static constexpr uint8_t kMikroMK3_SmartstripsDataSize = 6;
+		static constexpr uint8_t kMikroMK3_nSmartstripTouches = 2;
+		uint16_t m_touchstripValues[kMikroMK3_nSmartstripTouches];
+		bool isButtonPressed(Button button) const noexcept;
+		bool isButtonPressed(const Transfer&, Button button_) const noexcept;
 		void processButtons(const Transfer&);
 		void processEncoder(const Transfer&);
 		void processSmartstrip(const Transfer&);
 		void processReport0x01(const Transfer&);
-		Device::Button deviceButton(Button btn_) const noexcept;
-		bool isButtonPressed(Button button) const noexcept;
-		bool isButtonPressed(const Transfer&, Button button_) const noexcept;
 
 		
 		static constexpr uint8_t kMikroMK3_nPads = 16;

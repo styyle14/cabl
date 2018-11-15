@@ -277,9 +277,8 @@ void MaschineMikroMK3::processButtons(const Transfer& input_)
 
 void MaschineMikroMK3::processEncoder(const Transfer& input_)
 {
-	uint8_t currentEncoderValue = input_.data()[kMikroMK3_buttonsDataSize + 1];
+	uint8_t currentEncoderValue = input_.data()[kMikroMK3_messageTypeDataSize + kMikroMK3_buttonsDataSize];
 	
-	std::cout << "Current Encoder Value: " << unsigned(currentEncoderValue) << "\n";
 	if (m_encoderValue != currentEncoderValue)
 	{
 		bool valueIncreased = ((m_encoderValue < currentEncoderValue) || ((m_encoderValue == 0x0f) && (currentEncoderValue == 0x00)))
@@ -291,7 +290,22 @@ void MaschineMikroMK3::processEncoder(const Transfer& input_)
 
 void MaschineMikroMK3::processSmartstrip(const Transfer& input_)
 {
-
+	uint8_t smartstripOffset= kMikroMK3_messageTypeDataSize + kMikroMK3_buttonsDataSize + kMikroMK3_EncodersDataSize;
+	uint16_t timeMs = input_[smartstripOffset] | (input_[smartstripOffset + 1] << 8);
+	std::cout << "Current Smartstrip Time in ms: " << timeMs << "\n";
+	
+	uint16_t touchLeftVal = input_[smartstripOffset + 2] | (input_[smartstripOffset + 3] << 8);
+	if (touchLeftVal != 0 && m_touchstripValues[0] != touchLeftVal)
+	{
+		m_touchstripValues[0] = touchLeftVal;
+		controlChanged(0, unsigned(touchLeftVal * 1.275), m_buttonStates[static_cast<uint8_t>(Button::Shift)]);
+	}
+	uint16_t touchRightVal = input_[smartstripOffset + 4] | (input_[smartstripOffset + 5] << 8);
+	if (touchRightVal != 0 && m_touchstripValues[1] != touchRightVal)
+	{
+		m_touchstripValues[1] = touchRightVal;
+		controlChanged(1, unsigned(touchRightVal * 1.275), m_buttonStates[static_cast<uint8_t>(Button::Shift)]);
+	}
 }
 
 void MaschineMikroMK3::processReport0x01(const Transfer& input_)
