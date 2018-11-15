@@ -46,15 +46,9 @@ class MaschineMikroMK3 : public Device
 		Device::Button deviceButton(Button btn_) const noexcept;
 		
 		void init() override;
-		bool read();
 		
-		GDisplayMaschineMikro m_display;
-		bool sendFrame();
-		void initDisplay() const;
-  
-		static constexpr uint8_t kMikroMK3_ledsDataSize = 78;
-		std::array<uint8_t, kMikroMK3_ledsDataSize> m_leds;
-		bool m_isDirtyLeds;
+		// Input Processing
+		bool read();
 		
 		static constexpr uint8_t kMikroMK3_messageTypeDataSize = 1;
 		static constexpr uint8_t kMikroMK3_nButtons = 41;
@@ -70,19 +64,29 @@ class MaschineMikroMK3 : public Device
 		bool isButtonPressed(Button button) const noexcept;
 		bool isButtonPressed(const Transfer&, Button button_) const noexcept;
 		void processButtons(const Transfer&);
+		uint8_t m_encoderValue;
 		void processEncoder(const Transfer&);
 		void processSmartstrip(const Transfer&);
 		void processReport0x01(const Transfer&);
 
-		
 		static constexpr uint8_t kMikroMK3_nPads = 16;
 		static constexpr uint8_t kMikroMK3_padDataSize = 64;
 		static constexpr uint8_t kMikroMK3_padsBufferSize = 16;
 		unsigned m_padsData[kMikroMK3_nPads];
 		std::bitset<kMikroMK3_nPads> m_padsStatus;
 		void processPads(const Transfer&);
+		void processReport0x02(const Transfer&);
 		
-		uint8_t m_encoderValue;
+		// Output Processing
+		static constexpr uint8_t kMikroMK3_ledsDataSize = 80;
+		std::array<uint8_t, kMikroMK3_ledsDataSize> m_leds;
+		bool m_isDirtyLeds;
+		void initLeds();
+		bool sendLeds();
+		
+		GDisplayMaschineMikro m_display;
+		void initDisplay() const;
+		bool sendFrame();
 };
 
 //--------------------------------------------------------------------------------------------------

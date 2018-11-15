@@ -93,7 +93,7 @@ void MaschineMikroMK3::initDisplay() const
 
 void MaschineMikroMK3::init()
 {
-	// Display
+	initLeds();
 	initDisplay();
 	m_display.white();
 }
@@ -136,10 +136,10 @@ bool MaschineMikroMK3::tick()
 	//{
 		//success = sendFrame();
 	//}
-	//else if (state == 1)
-	//{
-		//success = sendLeds();
-	//}
+	if (state == 1)
+	{
+		success = sendLeds();
+	}
 	if (state == 2)
 	{
 		success = read();
@@ -153,23 +153,6 @@ bool MaschineMikroMK3::tick()
 	return success;
 }
 
-bool MaschineMikroMK3::sendFrame()
-{
-	uint8_t yOffset = 0;
-	for (int chunk = 0; chunk < 4; chunk++, yOffset += 2)
-	{
-		const uint8_t* ptr = m_display.buffer() + (chunk * 256);
-		if (!writeToDeviceHandle(
-			Transfer({0xE0, 0x00, 0x00, yOffset, 0x00, 0x80, 0x00, 0x02, 0x00}, ptr, 256),
-			kMikroMK3_epDisplay))
-		{
-			return false;
-		}
-	}
-	m_display.resetDirtyFlags();
-	return true;
-}
-
 bool MaschineMikroMK3::read()
 {
 	Transfer input;
@@ -179,12 +162,10 @@ bool MaschineMikroMK3::read()
 	}
 	else if (input && input[0] == 0x01)
 	{
-		std::cout << "Processing Report 0x01 : Buttons, Encoder, and Smartstrip\n";
 		processReport0x01(input);
 	}
-	else if (input && input[0] == 0x02) // Too many pad messages, need to skip some...
+	else if (input && input[0] == 0x02)
 	{
-		//std::cout << "Processing Report 0x02 : Pads\n";
 		processPads(input);
 	}
 	
@@ -292,7 +273,6 @@ void MaschineMikroMK3::processSmartstrip(const Transfer& input_)
 {
 	uint8_t smartstripOffset= kMikroMK3_messageTypeDataSize + kMikroMK3_buttonsDataSize + kMikroMK3_EncodersDataSize;
 	uint16_t timeMs = input_[smartstripOffset] | (input_[smartstripOffset + 1] << 8);
-	std::cout << "Current Smartstrip Time in ms: " << timeMs << "\n";
 	
 	uint16_t touchLeftVal = input_[smartstripOffset + 2] | (input_[smartstripOffset + 3] << 8);
 	if (touchLeftVal != 0 && m_touchstripValues[0] != touchLeftVal)
@@ -328,6 +308,47 @@ void MaschineMikroMK3::processPads(const Transfer& input_)
 		m_padsStatus[pad] = false;
 		keyChanged(pad, 0, m_buttonStates[static_cast<uint8_t>(Button::Shift)]);
 	}
+}
+
+void MaschineMikroMK3::processReport0x02(const Transfer& input_)
+{
+	processPads(input_);
+}
+
+bool MaschineMikroMK3::sendFrame()
+{
+	uint8_t yOffset = 0;
+	for (int chunk = 0; chunk < 4; chunk++, yOffset += 2)
+	{
+		const uint8_t* ptr = m_display.buffer() + (chunk * 256);
+		if (!writeToDeviceHandle(
+			Transfer({0xE0, 0x00, 0x00, yOffset, 0x00, 0x80, 0x00, 0x02, 0x00}, ptr, 256),
+			kMikroMK3_epDisplay))
+		{
+			return false;
+		}
+	}
+	m_display.resetDirtyFlags();
+	return true;
+}
+
+void MaschineMikroMK3::initLeds()
+{
+	uint8_t i = 0;
+	for(auto& led : m_leds) {   // Range-for!
+		led = i; 
+		i++;
+	}
+}
+
+bool MaschineMikroMK3::sendLeds()
+{
+	if (!writeToDeviceHandle(Transfer({0x80}, &m_leds[0], 80), kMikroMK3_epOut))
+	{
+		return false;
+	}
+	m_isDirtyLeds = false;
+	return true;
 }
 
 } // namespace cabl
