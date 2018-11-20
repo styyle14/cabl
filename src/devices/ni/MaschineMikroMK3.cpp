@@ -35,51 +35,6 @@ namespace sl
 {
 namespace cabl
 {
-enum class MaschineMikroMK3::Button : uint8_t
-{
-	NativeInstruments,
-	Star,
-	Search,
-	Volume,
-	Swing,
-	Tempo,
-	PlugIn,
-	Sampling,
-	BrowseLeft,
-	BrowseRight,
-	Pitch,
-	Mod,
-	Perform,
-	Notes,
-	Group,
-	Auto,
-	Lock,
-	NoteRepeat,
-	Restart,
-	Erase,
-	Tap,
-	Follow,
-	Play,
-	Rec,
-	Stop,
-	Shift,
-	FixedVel,
-	PadMode,
-	Keyboard,
-	Chords,
-	Step,
-	Scene,
-	Pattern,
-	Events,
-	Variation,
-	Duplicate,
-	Select,
-	Solo,
-	Mute,
-	MainEncoder,
-	TouchEncoderMain,
-	Unknown
-};
 
 MaschineMikroMK3::MaschineMikroMK3() : m_padsStatus(0), m_isDirtyLeds(false)
 {
@@ -252,6 +207,15 @@ void MaschineMikroMK3::processButtons(const Transfer& input_)
 			{
 				buttonChanged(changedButton, buttonPressed, shiftPressed);
 			}
+			if (buttonPressed != 0)
+			{
+				magic++;
+			}
+			for(auto& led : m_leds)
+			{
+				std::cout << "Magic is " << unsigned(magic) << "\n";
+				led = magic;
+			}
 		}
 	}
 }
@@ -334,11 +298,11 @@ bool MaschineMikroMK3::sendFrame()
 
 void MaschineMikroMK3::initLeds()
 {
-	uint8_t i = 0;
-	for(auto& led : m_leds) {   // Range-for!
-		led = i; 
-		i++;
+	for(auto& led : m_leds)
+	{
+		led = 0;
 	}
+	magic=0;
 }
 
 bool MaschineMikroMK3::sendLeds()
