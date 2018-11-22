@@ -71,7 +71,7 @@ class MaschineMikroMK3 : public Device
 			Stop,
 			Shift,
 			FixedVel,
-			PadMode,
+			MM3PadMode,
 			Keyboard,
 			Chords,
 			Step,
@@ -87,8 +87,7 @@ class MaschineMikroMK3 : public Device
 			TouchEncoderMain,
 			Unknown
 		};
-		Device::Button deviceButton(Button btn_) const noexcept;
-		
+		Device::Button deviceButton(Button btn_) const noexcept;		
 		
 		enum class Led : uint8_t
 		{
@@ -119,7 +118,7 @@ class MaschineMikroMK3 : public Device
 			Stop,
 			Shift,
 			FixedVel,
-			PadMode,
+			MM3PadMode,
 			Keyboard,
 			Chords,
 			Step,
@@ -171,8 +170,11 @@ class MaschineMikroMK3 : public Device
 			SmartstripLed22,
 			SmartstripLed23,
 			SmartstripLed24,
-			SmartstripLed25
+			SmartstripLed25,
+			Unknown
 		};
+		Led led(Device::Button btn_) const noexcept;
+		
 		uint8_t magic;
 		
 		void init() override;
@@ -210,9 +212,11 @@ class MaschineMikroMK3 : public Device
 		// Output Processing
 		static constexpr uint8_t kMikroMK3_ledsDataSize = 80;
 		std::array<uint8_t, kMikroMK3_ledsDataSize> m_leds;
+		bool isRGBLed(Led) const noexcept;
 		bool m_isDirtyLeds;
 		void initLeds();
 		bool sendLeds();
+		void setLedImpl(Led, const Color&);
 		
 		GDisplayMaschineMikro m_display;
 		void initDisplay() const;
