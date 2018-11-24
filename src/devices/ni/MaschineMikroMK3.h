@@ -219,7 +219,7 @@ class MaschineMikroMK3 : public Device
 		void setLedImpl(Led, const Color&);
 		
 		GDisplayMaschineMikro m_display;
-		void initDisplay() const;
+		void initDisplay();
 		bool sendFrame();
 };
 

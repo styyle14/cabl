@@ -40,46 +40,34 @@ MaschineMikroMK3::MaschineMikroMK3() : m_padsStatus(0), m_isDirtyLeds(false)
 {
 }
 
-void MaschineMikroMK3::initDisplay() const
+void MaschineMikroMK3::initLeds()
 {
-	//!\todo set backlight
-	return;
+	for(auto& led : m_leds)
+	{
+		led = 0;
+	}
+	magic=0;
+}
+
+void MaschineMikroMK3::initDisplay()
+{
+	m_display.black();
+	m_display.setDirty();
 }
 
 void MaschineMikroMK3::init()
 {
 	initLeds();
 	initDisplay();
-	m_display.white();
 }
-
-bool MaschineMikroMK3::isButtonPressed(Button button_) const noexcept
-{
-	uint8_t buttonPos = static_cast<uint8_t>(button_);
-	return ((m_buttons[buttonPos >> 3] & (1 << (buttonPos % 8))) != 0);
-}
-bool MaschineMikroMK3::isButtonPressed(const Transfer& transfer_, Button button_) const noexcept
-{
-	uint8_t buttonPos = static_cast<uint8_t>(button_);
-	return ((transfer_[1 + (buttonPos >> 3)] & (1 << (buttonPos % 8))) != 0);
-}
-
-
-Canvas* MaschineMikroMK3::graphicDisplay(size_t displayIndex_)
-{
-	static NullCanvas s_dummyDisplay;
-	if (displayIndex_ > 0)
-	{
-		return &s_dummyDisplay;
-	}
-
-	return &m_display;
-}
-
 
 bool MaschineMikroMK3::tick()
 {
 	bool success = true;
+	if (m_display.dirty())
+	{
+		success &= sendFrame();
+	}
 	if (m_isDirtyLeds)
 	{
 		success &= sendLeds();
@@ -260,6 +248,17 @@ MaschineMikroMK3::Led MaschineMikroMK3::led(Device::Button btn_) const noexcept
 	}
 }
 
+bool MaschineMikroMK3::isButtonPressed(Button button_) const noexcept
+{
+	uint8_t buttonPos = static_cast<uint8_t>(button_);
+	return ((m_buttons[buttonPos >> 3] & (1 << (buttonPos % 8))) != 0);
+}
+bool MaschineMikroMK3::isButtonPressed(const Transfer& transfer_, Button button_) const noexcept
+{
+	uint8_t buttonPos = static_cast<uint8_t>(button_);
+	return ((transfer_[1 + (buttonPos >> 3)] & (1 << (buttonPos % 8))) != 0);
+}
+
 void MaschineMikroMK3::processButtons(const Transfer& input_)
 {
 	bool shiftPressed(isButtonPressed(input_, Button::Shift));
@@ -311,6 +310,8 @@ void MaschineMikroMK3::processEncoder(const Transfer& input_)
 			led = magic;
 			m_isDirtyLeds = true;
 		}
+		m_display.fill(magic);
+		m_display.setDirty();
 	}
 }
 
@@ -360,32 +361,6 @@ void MaschineMikroMK3::processReport0x02(const Transfer& input_)
 	processPads(input_);
 }
 
-bool MaschineMikroMK3::sendFrame()
-{
-	uint8_t yOffset = 0;
-	for (int chunk = 0; chunk < 4; chunk++, yOffset += 2)
-	{
-		const uint8_t* ptr = m_display.buffer() + (chunk * 256);
-		if (!writeToDeviceHandle(
-			Transfer({0xE0, 0x00, 0x00, yOffset, 0x00, 0x80, 0x00, 0x02, 0x00}, ptr, 256),
-			kMikroMK3_epDisplay))
-		{
-			return false;
-		}
-	}
-	m_display.resetDirtyFlags();
-	return true;
-}
-
-void MaschineMikroMK3::initLeds()
-{
-	for(auto& led : m_leds)
-	{
-		led = 0;
-	}
-	magic=0;
-}
-
 bool MaschineMikroMK3::sendLeds()
 {
 	if (!writeToDeviceHandle(Transfer({0x80}, &m_leds[0], 80), kMikroMK3_epOut))
@@ -429,5 +404,31 @@ void MaschineMikroMK3::setLedImpl(Led led_, const Color& color_)
 	m_leds[ledIndex] = newVal;
 	m_isDirtyLeds = m_isDirtyLeds || (currentVal != newVal);
 }
+
+Canvas* MaschineMikroMK3::graphicDisplay(size_t displayIndex_)
+{
+	static NullCanvas s_dummyDisplay;
+	if (displayIndex_ > 0)
+	{
+		return &s_dummyDisplay;
+	}
+
+	return &m_display;
+}
+
+bool MaschineMikroMK3::sendFrame()
+{
+	std::cout << "sending frame " << unsigned(magic) << ".\n";
+	const uint8_t ptr[256] = {0};
+	if (!writeToDeviceHandle(
+		Transfer({0xE0, 0x00, 0x00, 0x00, 0x00, 0x03, 0x0f, 0x02, 0x00}, ptr, 256),
+		kMikroMK3_epDisplay))
+	{
+		return false;
+	}
+	m_display.resetDirtyFlags();
+	return true;
+}
+
 } // namespace cabl
 } // namespace sl
